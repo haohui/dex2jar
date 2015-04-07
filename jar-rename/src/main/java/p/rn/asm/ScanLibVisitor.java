@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.commons.EmptyVisitor;
@@ -24,7 +25,12 @@ public class ScanLibVisitor extends EmptyVisitor {
         return Collections.unmodifiableMap(map);
     }
 
-    @Override
+  @Override
+  public void visitSource(String source, String debug) {
+    clz.source = source;
+  }
+
+  @Override
     public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
         clz = new ClassInfo();
         clz.access = access;

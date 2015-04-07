@@ -7,8 +7,9 @@ import java.util.Map;
 import java.util.Set;
 
 public class ClassInfo {
+  public String source;
 
-    public static class MemberInfo {
+  public static class MemberInfo {
         public int access;
         public String desc;
         public String name;

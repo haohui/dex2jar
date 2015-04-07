@@ -43,6 +43,9 @@ public class InitOut {
     private Set<String> pkgMap = new TreeSet<String>();
     private Set<String> pkgSet = new TreeSet<String>();
 
+    private Map<String, ClassInfo> classInfoMap;
+    private Set<String> originalClassNames = new HashSet<String>();
+
     private void doClass(String clz) {
         if (clzSet.contains(clz)) {
             return;
@@ -66,14 +69,43 @@ public class InitOut {
                 doPkg(clz.substring(0, index));
                 String cName = clz.substring(index + 1);
                 if (shouldRename(cName)) {
-                    clzMap.add(String.format("c %s=C%03d%s", clz, clzIndex++, short4LongName(cName)));
+                    String targetName = getTargetName(
+                        "C", cName, classInfoMap.get(clz));
+                    clzMap.add(String.format("c %s=%s", clz, targetName));
                 }
             } else {
                 if (shouldRename(clz)) {
-                    clzMap.add(String.format("c %s=CI_%03d%s", clz, clzIndex++, short4LongName(clz)));
+                    String targetName = getTargetName(
+                        "CI_", clz, classInfoMap.get(clz));
+                    clzMap.add(String.format("c %s=%s", clz, targetName));
                 }
             }
         }
+    }
+
+    private static String getClassName(String clazz) {
+        int index = clazz.lastIndexOf('/');
+        if (index > 0) {
+            clazz = clazz.substring(index + 1);
+        }
+        index = clazz.lastIndexOf('$');
+        if (index > 0) {
+            clazz = clazz.substring(index + 1);
+        }
+        return clazz;
+    }
+
+    private String getTargetName(String prefix, String clazz, ClassInfo info) {
+        if (info.source != null && info.source.endsWith(".java")) {
+            String desiredName = info.source.substring(0, info.source.length
+                () - 5);
+            if (!originalClassNames.contains(desiredName)) {
+                originalClassNames.add(desiredName);
+                return desiredName;
+            }
+        }
+        return prefix + String.format("%03d", clzIndex++) +
+            short4LongName(clazz);
     }
 
     private String short4LongName(String name) {
@@ -126,8 +158,11 @@ public class InitOut {
     }
 
     private void doOut() throws IOException {
-        Map<String, ClassInfo> map = Scann.scanLib(from);
-        for (ClassInfo info : map.values()) {
+        classInfoMap = Scann.scanLib(from);
+        for (ClassInfo info : classInfoMap.values()) {
+            originalClassNames.add(getClassName(info.name));
+        }
+        for (ClassInfo info : classInfoMap.values()) {
             doClass(info.name);
             for (List<MemberInfo> ms : info.members.values()) {
                 if (ms.size() == 1) {
